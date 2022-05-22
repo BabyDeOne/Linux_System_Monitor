@@ -9,6 +9,8 @@ using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+using std::ifstream;
+using std::istringstream;
 
 // DONE: An example of how to read data from the filesystem
 string LinuxParser::OperatingSystem() {
@@ -88,29 +90,112 @@ float LinuxParser::MemoryUtilization() {
 }
 
 // TODO: Read and return the system uptime
-long LinuxParser::UpTime() { return 0; }
+long LinuxParser::UpTime() { 
+  string line, str_value;
+  	long value = 0;
+  	
+  	ifstream filestream(kProcDirectory + kUptimeFilename);
+  	
+  	if(filestream.is_open()){
+    	getline(filestream, line);
+      	istringstream linestream(line);
+      	linestream >> str_value;
+      	value = stol(str_value);
+    }
+  	filestream.close();
+  	return value;
+}
 
 // TODO: Read and return the number of jiffies for the system
-long LinuxParser::Jiffies() { return 0; }
+long LinuxParser::Jiffies() { 
+  return (ActiveJiffies() - IdleJiffies()); 
+
+ }
 
 // TODO: Read and return the number of active jiffies for a PID
 // REMOVE: [[maybe_unused]] once you define the function
 long LinuxParser::ActiveJiffies(int pid[[maybe_unused]]) { return 0; }
 
 // TODO: Read and return the number of active jiffies for the system
-long LinuxParser::ActiveJiffies() { return 0; }
+long LinuxParser::ActiveJiffies() { 
+  const auto cpu_stats = LinuxParser::CpuUtilization();
+  	const auto user = stol(cpu_stats[LinuxParser::kUser_]);
+  	const auto nice = stol(cpu_stats[LinuxParser::kNice_]);
+  	const auto system = stol(cpu_stats[LinuxParser::kSystem_]);
+  	const auto idle = stol(cpu_stats[LinuxParser::kIdle_]);
+  	const auto iowait = stol(cpu_stats[LinuxParser::kIOwait_]);
+  	const auto irq = stol(cpu_stats[LinuxParser::kIRQ_]);
+  	const auto softirq = stol(cpu_stats[LinuxParser::kSoftIRQ_]);
+  	const auto steal = stol(cpu_stats[LinuxParser::kSteal_]);
+
+  return (user + nice + system + idle + iowait + irq + softirq + steal);
+ }
 
 // TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
+long LinuxParser::IdleJiffies() { 
+  const auto cpu_stats = LinuxParser::CpuUtilization();
+  	const auto idle = stol(cpu_stats[LinuxParser::kIdle_]);
+  	const auto iowait = stol(cpu_stats[LinuxParser::kIOwait_]);
+  
+  return (idle + iowait);
+ }
 
 // TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
+vector<string> LinuxParser::CpuUtilization() { 
+  vector<string> result;
+  	string line, val;
+  	
+  	ifstream stream (kProcDirectory + kStatFilename);
+  	if(stream){
+    	getline(stream, line);
+      	istringstream linestream(line);
+      	linestream >> val;
+      	
+      	for(int ii = 0; ii < CPUStates::kGuestNice_; ii++){
+        	linestream >> val;
+          	result.push_back(val);
+        }
+    }
+  	stream.close();
+  	return result; 
+}
 
 // TODO: Read and return the total number of processes
-int LinuxParser::TotalProcesses() { return 0; }
+int LinuxParser::TotalProcesses() { 
+  string line, key;
+  int value;
+  std::ifstream f_stream(kProcDirectory + kStatFilename);
+
+  if(f_stream){
+    while(getline(f_stream, line)){
+      std::istringstream linestream(line);
+      while(linestream >> key >> value){
+        if(key == "processes")\
+          return value;
+      }
+    }
+  } 
+  f_stream.close(); 
+  return 0; 
+}
 
 // TODO: Read and return the number of running processes
-int LinuxParser::RunningProcesses() { return 0; }
+int LinuxParser::RunningProcesses() { 
+  string line, key;
+  int value;
+  std::ifstream f_stream(kProcDirectory + kStatFilename);
+  
+  if(f_stream){
+    while(getline(f_stream, line)){
+      std::istringstream linestream(line);
+      while(linestream >> key >> value){
+        if(key == "procs_running")
+          return value;
+      }
+    }
+  }
+  f_stream.close();
+  return 0; }
 
 // TODO: Read and return the command associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
