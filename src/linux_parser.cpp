@@ -266,13 +266,13 @@ string LinuxParser::User(int pid) {
       istringstream linestream(line);
 
       while (linestream >> user >> uid_str) {
-        if (uid_str == key) return user;
+        if (uid_str == key) return user.substr(0, 5);
       }
     }
   }
 
   f_stream.close();
-  return user;
+  return user.substr(0, 5);
 }
 
 // TODO: Read and return the uptime of a process
