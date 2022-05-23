@@ -18,7 +18,19 @@ using std::vector;
 Processor& System::Cpu() { return cpu_; }
 
 // TODO: Return a container composed of the system's processes
-vector<Process>& System::Processes() { return processes_; }
+vector<Process>& System::Processes() { 
+    processes_.clear();
+
+  	auto pids = LinuxParser::Pids();
+  	for (long unsigned int i = 0; i < pids.size(); i++) {// it was "for (const int& pidint : pids) {"
+    													/*thanks zedbaia https://github.com/ZedObaia/CppND-System-Monitor/blob/master/src/system.cpp */
+      	if (!LinuxParser::Ram(pids[i]).empty() && !LinuxParser::Command(pids[i]).empty()) {        
+    		processes_.push_back(pids[i]);
+        }
+  }
+
+  return processes_;
+}
 
 // TODO: Return the system's kernel identifier (string)
 std::string System::Kernel() { return LinuxParser::Kernel(); }
